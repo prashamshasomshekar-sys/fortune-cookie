@@ -246,6 +246,27 @@ addEventListener("pointermove", e => {
 
 // ---------- loop ----------
 const clock = new THREE.Clock();
+
+// Keep what you actually SEE centered: the crescent is lopsided, so as it spins its bulk
+// swings left/right even though its middle is on the spin axis. Each frame, measure where
+// the cookie lands on screen and ease it back so its visible left/right edges are balanced.
+let shakeX = 0, centerFix = 0;
+const seen = new THREE.Box3(), corner = new THREE.Vector3();
+function keepCentered() {
+  cookie.position.x = shakeX + centerFix;
+  cookie.updateMatrixWorld(true);
+  seen.setFromObject(cookie, true);
+  let minX = Infinity, maxX = -Infinity;
+  for (let i = 0; i < 8; i++) {
+    corner.set(i & 1 ? seen.max.x : seen.min.x, i & 2 ? seen.max.y : seen.min.y, i & 4 ? seen.max.z : seen.min.z).project(camera);
+    minX = Math.min(minX, corner.x); maxX = Math.max(maxX, corner.x);
+  }
+  const offScreen = (minX + maxX) / 2;  // -1..1, 0 = middle of the window
+  const dist = camera.position.z - (seen.min.z + seen.max.z) / 2;
+  const halfW = Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * dist * camera.aspect;
+  centerFix -= offScreen * halfW * 0.25;
+  cookie.position.x = shakeX + centerFix;
+}
 function tick() {
   const dt = Math.min(clock.getDelta(), .05);
   const t = clock.elapsedTime;
@@ -270,9 +291,9 @@ function tick() {
   if (state === "shaking") {
     const e = (now - t0) / 650;
     const amp = 0.04 + e * 0.12;
-    cookie.position.x = Math.sin(now * 0.09) * amp;
+    shakeX = Math.sin(now * 0.09) * amp;
     cookie.rotation.z = Math.sin(now * 0.07) * amp;
-    if (e >= 1) { cookie.position.x = 0; cookie.rotation.z = 0; burst(); }
+    if (e >= 1) { shakeX = 0; cookie.rotation.z = 0; burst(); }
   }
   if (state === "open") {
     split += (1 - split) * 0.12;
@@ -318,6 +339,7 @@ function tick() {
     if (c.userData.life <= 0) { scene.remove(c); crumbs.splice(i, 1); }
   }
 
+  keepCentered();
   renderer.render(scene, camera);
   requestAnimationFrame(tick);
 }
