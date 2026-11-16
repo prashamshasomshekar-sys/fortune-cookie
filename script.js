@@ -257,7 +257,13 @@ function tick() {
 
   // float + turntable
   cookie.position.y = 0.15 + Math.sin(t * 1.6) * 0.08;
-  cookie.rotation.y += dt * (state === "open" ? 0.15 : 0.5);
+  if (state === "open") {
+    // turn to face the camera so the halves split evenly left and right
+    const front = Math.round(cookie.rotation.y / (Math.PI * 2)) * Math.PI * 2;
+    cookie.rotation.y += (front - cookie.rotation.y) * 0.15;
+  } else {
+    cookie.rotation.y += dt * 0.5;
+  }
   const targetScale = hover && state === "idle" ? 1.08 : 1;
   cookie.scale.lerp(new THREE.Vector3(targetScale, targetScale, targetScale), 0.15);
 
@@ -283,10 +289,13 @@ function tick() {
   } else if (state === "idle") {
     split += (0 - split) * 0.2;
   }
-  // halves fly apart & tilt
-  right.position.set(split * 1.2, split * 0.1, 0);
+  // halves fly apart & tilt; spread wider on big screens so they peek out beside the note,
+  // but never past the edges of a narrow phone screen
+  const viewW = 2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.position.z * camera.aspect;
+  const spread = Math.min(1.9, viewW * 0.36);
+  right.position.set(split * spread, split * 0.1, 0);
   right.rotation.set(0, split * -0.5, split * -0.6);
-  left.position.set(-split * 1.2, split * 0.1, 0);
+  left.position.set(-split * spread, split * 0.1, 0);
   left.rotation.set(0, split * 0.5, split * 0.6);
 
   // sparkles orbit
