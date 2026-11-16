@@ -55,7 +55,8 @@ body { font-family: "VT323", monospace; color: #fff; cursor: pointer; user-selec
 }
 @keyframes drive { to { background-position: 0 60px, 0 60px; } }
 
-#scene { position: fixed; inset: 0; display: block; }
+/* width/height pin the canvas to the window; without them it grows with screen scaling (125%, 150%...) and the cookie drifts off-center */
+#scene { position: fixed; inset: 0; width: 100%; height: 100%; display: block; }
 
 /* ---------- CRT overlay ---------- */
 .crt {

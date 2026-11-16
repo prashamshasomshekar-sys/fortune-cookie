@@ -84,6 +84,11 @@ function cookieHalf(side) {
 const cookie = new THREE.Group();
 const left = cookieHalf(-1), right = cookieHalf(1);
 cookie.add(left, right);
+// The fold and bend leave the shape off-center, so it orbited instead of spinning in place.
+// Shift both halves by the same amount so the cookie's middle sits on the spin axis.
+const mid = new THREE.Box3().setFromObject(cookie).getCenter(new THREE.Vector3());
+left.children[0].position.sub(mid);
+right.children[0].position.sub(mid);
 cookie.rotation.set(0.5, 0, 0);
 cookie.position.y = 0.15;
 scene.add(cookie);
